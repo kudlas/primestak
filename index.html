@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="cs" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI pod kontrolou: Influencer Academy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #fcfcfd;
+        }
+
+        /* Navigace s barevným akcentem */
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 2px solid;
+            border-image: linear-gradient(to right, #6366f1, #a855f7, #ec4899) 1;
+        }
+
+        /* Bento Karty s barevnými stíny */
+        .bento-card {
+            background: white;
+            border: 1px solid rgba(0,0,0,0.03);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.01);
+        }
+
+        .bento-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(168, 85, 247, 0.3);
+        }
+        
+        /* Specifické stíny pro různé karty */
+        .card-indigo:hover { box-shadow: 0 25px 50px -12px rgba(99, 102, 241, 0.15); }
+        .card-pink:hover { box-shadow: 0 25px 50px -12px rgba(236, 72, 153, 0.15); }
+        .card-emerald:hover { box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.15); }
+
+        /* Přechod textu */
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Hero Prezentace na pozadí */
+        .hero-slideshow {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .slide {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            transform: scale(1.1); /* Jemný zoom efekt */
+            transition: opacity 1.5s ease-in-out, transform 6s linear;
+        }
+
+        .slide.active {
+            opacity: 0.15; /* Jemné pozadí, aby byl text čitelný */
+            transform: scale(1);
+        }
+
+        /* Barevné puntíky v pozadí pro hravost */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.2;
+            z-index: -1;
+        }
+
+        /* Tenký scrollbar pro seznam termínů */
+        .terminy-scroll {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99,102,241,0.3) transparent;
+        }
+        .terminy-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .terminy-scroll::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .terminy-scroll::-webkit-scrollbar-thumb {
+            background-color: rgba(99,102,241,0.35);
+            border-radius: 9999px;
+        }
+
+        /* Vlastní styly pro FAQ summary, aby se skryl defaultní marker */
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+
+        /* Přihláška button */
+        .btn-prihlaska {
+            position: relative;
+            background: linear-gradient(135deg, #10b981, #059669) !important;
+            color: white !important;
+            overflow: visible;
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+
+        .btn-prihlaska:hover {
+            background: linear-gradient(135deg, #059669, #047857) !important;
+        }
+
+        .particle {
+            position: fixed;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 51;
+            animation: particle-fly var(--duration) ease-out forwards;
+            background: var(--color);
+        }
+
+        @keyframes particle-fly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="text-slate-950">
+
+    <nav class="glass-nav fixed top-0 w-full z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="w-10 h-10 rounded-xl text-white text-sm font-black tracking-wide flex items-center justify-center shadow-md" style="background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899)">AI</span>
+                <span class="text-slate-900 font-extrabold text-lg tracking-tight">pod kontrolou</span>
+            </div>
+            <div class="hidden md:flex space-x-6 font-bold text-sm uppercase tracking-wider items-center">
+                <a href="#co-se-naucite" class="hover:text-indigo-600 transition">Učení</a>
+                <a href="#zpetna-vazba" class="hover:text-amber-500 transition">Recenze</a>
+                <a href="#lektori" class="hover:text-a855f7 transition text-violet-600">Mentoři</a>
+                <a href="#terminy" class="hover:text-ec4899 transition text-pink-600">Termíny</a>
+                <a href="#lokace" class="hover:text-indigo-600 transition">Kde</a>
+                <a href="#faq" class="hover:text-indigo-600 transition">FAQ</a>
+                <a href="#kontakt" class="hover:text-indigo-600 transition">Kontakt</a>
+                <a href="#kontakt" id="btn-prihlaska" class="btn-prihlaska px-5 py-2.5 rounded-full transition text-xs font-bold">Přihláška</a>
+            </div>
+        </div>
+    </nav>
+
+    <header class="relative min-h-screen flex items-center justify-center pt-20 px-6 overflow-hidden bg-slate-50">
+        <div class="hero-slideshow">
+            <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=1920')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=1920')"></div>
+            <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&q=80&w=1920')"></div>
+        </div>
+
+        <div class="blob w-96 h-96 bg-indigo-300 top-1/4 left-1/4"></div>
+        <div class="blob w-80 h-80 bg-pink-300 bottom-1/4 right-1/4"></div>
+
+        <div class="max-w-5xl mx-auto text-center z-10 relative">
+            <div class="inline-flex items-center space-x-2 px-4 py-1.5 bg-white rounded-full shadow-sm border border-slate-100 mb-8" data-aos="fade-down">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-sm font-semibold text-slate-600">Registrace na léto 2026 spuštěna</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-extrabold mb-8 leading-tight tracking-tighter" data-aos="fade-up" data-aos-delay="100">
+                AI pod kontrolou:<br>
+                <span class="gradient-text">Influencer Academy</span>
+            </h1>
+            <p class="text-2xl text-slate-700 mb-16 max-w-2xl mx-auto font-medium leading-relaxed" data-aos="fade-up" data-aos-delay="200">
+                Příměstský tábor pro děti 10–15 let. Ovládni technologie roku 2026 a nauč se tvořit profi obsah v Praze.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-6" data-aos="fade-up" data-aos-delay="300">
+                <a href="#filozofie" class="px-12 py-5 bg-slate-950 text-white rounded-2xl font-bold hover:bg-slate-800 transition shadow-lg text-lg">Chci vědět víc</a>
+                <a href="#terminy" class="px-12 py-5 bg-white text-slate-950 rounded-2xl font-bold hover:bg-slate-50 transition shadow-sm border border-slate-100 text-lg">Kdy to je?</a>
+            </div>
+        </div>
+    </header>
+
+    <section id="filozofie" class="py-24 bg-white px-6 relative overflow-hidden">
+    <div class="max-w-7xl mx-auto relative z-10">
+        <div class="grid lg:grid-cols-2 gap-16 items-center">
+            
+            <div data-aos="fade-right">
+                <blockquote class="text-3xl font-serif italic text-slate-400 mb-8 leading-tight">
+                    „Já bych ty AI zakázala...“
+                </blockquote>
+                <h2 class="text-4xl font-extrabold mb-6 tracking-tight text-slate-900 leading-[1.1]">
+                    Můžeme ji dětem zakázat, ale ona nikam nezmizí.
+                </h2>
+                <div class="space-y-6 text-lg text-slate-600 leading-relaxed font-medium">
+                    <p>
+                        Zbytek světa bude AI používat a naše děti bez ní zůstanou pozadu. Je ale špatně, když se děti ptají AI úplně na všechno - třeba i na to, co si dát k obědu.
+                    </p>
+                    <p class="text-indigo-600 font-bold">
+                        Naším cílem je ukázat dětem, jak a kdy AI využívat tak, aby ona pracovala pro ně, a ne naopak.
+                    </p>
+                    <p>
+                        Učíme je rovnováze: využít technologii jako supervýkonný nástroj, ale neztratit u toho vlastní hlavu a kritický úsudek.
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid gap-6" data-aos="fade-left">
+                <div class="p-8 bg-emerald-50 rounded-3xl border border-emerald-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                            <i data-lucide="shield-check" class="text-emerald-600 w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-2 text-emerald-950">Digitální imunita</h4>
+                            <p class="text-slate-600 text-sm leading-relaxed">Schopnost rozpoznat deepfakes a manipulaci. Učíme děti technologie ovládat, ne jimi být ovládáni.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-indigo-50 rounded-3xl border border-indigo-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                            <i data-lucide="brain-circuit" class="text-indigo-600 w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-2 text-indigo-950">Architektura nápadu</h4>
+                            <p class="text-slate-600 text-sm leading-relaxed">Proměna vágní myšlenky v přesné zadání (prompt), kterému stroj rozumí a vytvoří z něj profi výstup.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-8 bg-pink-50 rounded-3xl border border-pink-100 shadow-sm transition-transform hover:scale-[1.02]">
+                    <div class="flex items-start space-x-4">
+                        <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm shrink-0">
+                            <i data-lucide="clapperboard" class="text-pink-600 w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-xl mb-2 text-pink-950">Produkční workflow</h4>
+                            <p class="text-slate-600 text-sm leading-relaxed">Kompletní proces tvorby – od AI scénáře přes generování scén až po finální střih videí.</p>
+                        </div>
+                    </div>
+                </div>
+
+                
+            </div>
+
+        </div>
+    </div>
+</section>
+
+ <section id="lokace" class="py-0 bg-slate-50 overflow-hidden flex flex-col md:flex-row items-stretch min-h-[600px]">
+        <div class="flex-1 p-16 md:p-24 flex flex-col justify-center" data-aos="fade-right">
+            <h2 class="text-5xl font-extrabold mb-8 tracking-tight">Kde tvoříme?</h2>
+            <div class="space-y-8">
+                <div class="flex space-x-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center shrink-0"><i data-lucide="map-pin" class="text-indigo-600 w-5 h-5"></i></div>
+                    <div>
+                        <h4 class="font-bold text-xl mb-2">High-tech budova Gemini</h4>
+                        <p class="text-slate-600 leading-relaxed font-medium">
+                            Na Strži 2097/63, 140 00, Praha 4 - U výstupu z metra C a v těsné blízkosti OC Arkády, kde můžete parkovat. 
+                        </p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center shrink-0"><i data-lucide="coffee" class="text-indigo-600 w-5 h-5"></i></div>
+                    <div>
+                        <h4 class="font-bold text-xl mb-2">Zázemí & Obědy</h4>
+                        <p class="text-slate-600 leading-relaxed font-medium">K dispozici máme relax zónu pro pauzy a vlastní jídelnu s cateringem zaměřeným na moderní zdravou stravu.</p>
+                    </div>
+                </div>
+                <div class="flex space-x-4">
+                    <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center shrink-0"><i data-lucide="wifi" class="text-indigo-600 w-5 h-5"></i></div>
+                    <div>
+                       <h4 class="font-bold text-xl mb-2">Digitální rovnováha a park</h4>
+                         <p class="text-slate-600 leading-relaxed font-medium">
+                            Děti nebudou jen sedět u počítače. Rozlehlý Centrální park na Pankráci, máme hned za dveřmi. Intenzivní práci s AI střídáme s pohybem na čerstvém vzduchu a týmovými hrami. Sami dobře víme, že ty nejlepší nápady vznikají, když na chvíli vypnete Wi-Fi a vyvětráte si hlavu.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 min-h-[400px] relative" style="background-image: url('img/lokace.png'); background-size: cover; background-position: center;" data-aos="fade-left">
+            <div class="absolute inset-0" style="background: linear-gradient(45deg, rgba(99, 102, 241, 0.15), rgba(99, 102, 241, 0.05));"></div>
+            <div class="absolute bottom-10 left-10 right-10 bg-white/90 backdrop-blur-md p-8 rounded-3xl shadow-xl z-10">
+                <p class="text-indigo-600 font-extrabold uppercase tracking-widest text-xs mb-2">Naše zázemí</p>
+                <p class="text-slate-900 font-bold leading-tight">Prostor navržený pro spolupráci a nerušenou digitální tvorbu.</p>
+            </div>
+        </div>
+    </section>
+
+   <section class="py-24 px-6 bg-slate-900 text-white overflow-hidden relative">
+    <div class="absolute top-0 left-0 w-64 h-64 bg-indigo-500/10 blur-[100px] rounded-full"></div>
+    <div class="absolute bottom-0 right-0 w-64 h-64 bg-pink-500/10 blur-[100px] rounded-full"></div>
+
+    <div id="zpetna-vazba" class="max-w-7xl mx-auto relative z-10">
+        <div class="text-center mb-16">
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight" data-aos="fade-up">Co o nás říkají děti?</h2>
+            <p class="text-slate-400 font-medium" data-aos="fade-up" data-aos-delay="100">
+                Výběr ohlasů z kroužků a workshopů, které naši lektoři vedli v uplynulém roce.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm flex flex-col justify-between" data-aos="fade-up">
+                <div>
+                    <div class="flex text-amber-400 mb-6">
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                    </div>
+                    <p class="text-lg leading-relaxed mb-8 italic">
+                        "Nejvíc mě bavilo, že jsme fakt dělali věci, co mě zajímají. Petr nám ukázal, jak vygenerovat vlastní postavy do hry. Bylo to úplně jiný než informatika ve škole!"
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4 border-t border-white/10 pt-6">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-sm shadow-lg">AD</div>
+                    <div>
+                        <p class="font-bold">Adam (13 let)</p>
+                        <p class="text-xs text-slate-400">Workshop AI Grafiky</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 rounded-3xl bg-gradient-to-br from-indigo-600 to-violet-700 shadow-2xl shadow-indigo-500/20 flex flex-col justify-between transform md:-translate-y-4" data-aos="fade-up" data-aos-delay="100">
+                <div>
+                    <div class="flex text-white mb-6">
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                    </div>
+                    <p class="text-xl leading-relaxed mb-8 font-medium">
+                        "Jana je super lektorka. Naučila mě, jak stříhat videa na mobilu tak, aby vypadaly profi. Už vím, jak na přechody a efekty, co používají moji oblíbení youtubeři."
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4 border-t border-white/20 pt-6">
+                    <div class="w-12 h-12 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold text-sm shadow-lg">SM</div>
+                    <div>
+                        <p class="font-bold">Sára (12 let)</p>
+                        <p class="text-xs text-indigo-200 text-white/70">Kroužek digitální tvorby</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-8 rounded-3xl bg-white/5 border border-white/10 backdrop-blur-sm flex flex-col justify-between" data-aos="fade-up" data-aos-delay="200">
+                <div>
+                    <div class="flex text-amber-400 mb-6">
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                        <i data-lucide="star" class="fill-current w-4 h-4"></i>
+                    </div>
+                    <p class="text-lg leading-relaxed mb-8 italic">
+                        "Martin nám vysvětlil, jak si postavit comp, aby mi utáhl renderování videí. Teď už vím, co ty součástky fakt dělají a jak si to nastavit sám."
+                    </p>
+                </div>
+                <div class="flex items-center space-x-4 border-t border-white/10 pt-6">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-rose-500 flex items-center justify-center font-bold text-sm shadow-lg">VH</div>
+                    <div>
+                        <p class="font-bold">Viktor (15 let)</p>
+                        <p class="text-xs text-slate-400">IT Hardware Camp</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+    <section id="lektori" class="py-32 px-6 bg-slate-50 overflow-hidden relative">
+        <div class="blob w-96 h-96 bg-violet-200 bottom-0 left-0 opacity-15"></div>
+        <div class="max-w-7xl mx-auto text-center relative z-10">
+            <p class="text-center font-bold text-violet-600 uppercase tracking-widest mb-3">Tým snů</p>
+            <h2 class="text-5xl font-extrabold mb-24 tracking-tight">Tvoji mentoři</h2>
+            <div class="grid md:grid-cols-3 gap-16">
+                <div data-aos="fade-up">
+                    <div class="w-56 h-56 mx-auto mb-8 rounded-full overflow-hidden border-8 border-white shadow-2xl relative">
+                        <img src="img/honza.png" alt="Lektor" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-indigo-500 opacity-10"></div>
+                    </div>
+                    <h3 class="text-2xl font-extrabold tracking-tight">Honza</h3>
+                    <p class="text-indigo-600 font-bold mb-4">Expert na generativní sítě</p>
+                    <p class="text-slate-600 leading-relaxed px-4 text-sm">Bývalý vývojář, který dnes učí, jak AI nezneužívat, ale využívat pro kreativní tvorbu.</p>
+                </div>
+                <div data-aos="fade-up" data-aos-delay="100">
+                    <div class="w-56 h-56 mx-auto mb-8 rounded-full overflow-hidden border-8 border-white shadow-2xl relative">
+                        <img src="img/gabina.png" alt="Lektor" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-pink-500 opacity-10"></div>
+                    </div>
+                    <h3 class="text-2xl font-extrabold tracking-tight">Gábina</h3>
+                    <p class="text-pink-600 font-bold mb-4">Mediální producentka</p>
+                    <p class="text-slate-600 leading-relaxed px-4 text-sm">Specialistka na anonymní tvorbu obsahu, vizuální storytelling a virální kampaně.</p>
+                </div>
+                <div data-aos="fade-up" data-aos-delay="200">
+                    <div class="w-56 h-56 mx-auto mb-8 rounded-full overflow-hidden border-8 border-white shadow-2xl relative">
+                        <img src="img/kacka.png" alt="Lektor" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-emerald-500 opacity-10"></div>
+                    </div>
+                    <h3 class="text-2xl font-extrabold tracking-tight">Kačka</h3>
+                    <p class="text-emerald-600 font-bold mb-4">Hardwarový nadšenec</p>
+                    <p class="text-slate-600 leading-relaxed px-4 text-sm">Naučí tě, jak z tvého počítače vymáčknout maximum pro rendering a plynulou práci.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+   <section id="terminy" class="py-32 px-6 bg-white overflow-hidden relative">
+    <div class="blob w-80 h-80 bg-pink-200 -bottom-10 -right-10 opacity-10"></div>
+    <div class="max-w-5xl mx-auto relative z-10">
+        <div class="flex flex-col md:flex-row gap-16 items-start mb-12">
+            <div class="flex-1" data-aos="fade-right">
+                <p class="font-bold text-ec4899 uppercase tracking-widest mb-3">Plánuj dopředu</p>
+                <h2 class="text-5xl font-extrabold mb-12 tracking-tight">Kdy?</h2>
+                
+                <div class="relative">
+                    <div class="terminy-scroll overflow-y-auto space-y-5 pr-2" style="max-height: 272px;">
+                        <div class="p-6 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-pink-200 transition group hover:bg-pink-50">
+                            <div>
+                                <span class="font-bold text-lg text-slate-950 group-hover:text-pink-950">Termín A: 13. 7. – 17. 7. 2026</span>
+                                <span class="block text-xs text-slate-400 mt-0.5 font-medium">věk 9–11 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-emerald-100 px-3 py-1.5 rounded-full text-emerald-800 uppercase shrink-0 ml-4">5 volných míst</span>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-pink-200 transition group hover:bg-pink-50">
+                            <div>
+                                <span class="font-bold text-lg text-slate-950 group-hover:text-pink-950">Termín B: 27. 7. – 31. 7. 2026</span>
+                                <span class="block text-xs text-slate-400 mt-0.5 font-medium">věk 12–15 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-emerald-100 px-3 py-1.5 rounded-full text-emerald-800 uppercase shrink-0 ml-4">2 volná místa</span>
+                        </div>
+                        <div class="p-6 bg-slate-100 rounded-2xl flex justify-between items-center border border-slate-200 opacity-60">
+                            <div>
+                                <span class="font-bold text-lg text-slate-700">Termín C: 10. 8. – 14. 8. 2026</span>
+                                <span class="block text-xs text-slate-500 mt-0.5 font-medium">věk 9–11 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-slate-200 px-3 py-1.5 rounded-full text-slate-600 uppercase shrink-0 ml-4">Obsazeno</span>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-pink-200 transition group hover:bg-pink-50">
+                            <div>
+                                <span class="font-bold text-lg text-slate-950 group-hover:text-pink-950">Termín D: 17. 8. – 21. 8. 2026</span>
+                                <span class="block text-xs text-slate-400 mt-0.5 font-medium">věk 12–15 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-amber-100 px-3 py-1.5 rounded-full text-amber-800 uppercase shrink-0 ml-4">Poslední místa</span>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-pink-200 transition group hover:bg-pink-50">
+                            <div>
+                                <span class="font-bold text-lg text-slate-950 group-hover:text-pink-950">Termín E: 25. 8. – 29. 8. 2026</span>
+                                <span class="block text-xs text-slate-400 mt-0.5 font-medium">věk 9–11 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-emerald-100 px-3 py-1.5 rounded-full text-emerald-800 uppercase shrink-0 ml-4">8 volných míst</span>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl flex justify-between items-center border border-slate-100 hover:border-pink-200 transition group hover:bg-pink-50">
+                            <div>
+                                <span class="font-bold text-lg text-slate-950 group-hover:text-pink-950">Termín F: 1. 9. – 5. 9. 2026</span>
+                                <span class="block text-xs text-slate-400 mt-0.5 font-medium">věk 12–15 let</span>
+                            </div>
+                            <span class="text-xs font-bold bg-emerald-100 px-3 py-1.5 rounded-full text-emerald-800 uppercase shrink-0 ml-4">Nový termín</span>
+                        </div>
+                    </div>
+                    <div class="pointer-events-none absolute bottom-0 left-0 right-0 h-16 rounded-b-2xl" style="background: linear-gradient(to top, white, transparent);"></div>
+                </div>
+            </div>
+
+            <div id="cena" class="w-full md:w-80 bg-slate-950 rounded-3xl p-10 text-white flex flex-col justify-center items-center text-center shadow-2xl relative border-4 border-indigo-500 sticky top-24" data-aos="fade-left">
+                <h3 class="text-xl mb-4 font-bold text-slate-300 tracking-tight">Cena turnusu</h3>
+                <div class="text-6xl font-extrabold mb-5 tracking-tighter gradient-text">7 200 Kč</div>
+                <p class="text-slate-400 text-sm mb-10 leading-relaxed font-medium">Konečná cena včetně všech poplatků a stravy.</p>
+                <a href="#kontakt" class="w-full py-4 bg-white text-slate-950 rounded-2xl font-extrabold transition hover:bg-indigo-50 hover:scale-105 transform duration-300 text-lg shadow-xl shadow-indigo-500/20">
+                    Mám zájem!
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-indigo-950 rounded-3xl p-10 border border-indigo-800" data-aos="fade-up">
+            <h4 class="font-bold text-white text-xl mb-8 flex items-center">
+                <i data-lucide="check-circle-2" class="text-emerald-400 mr-3 w-6 h-6"></i>
+                Balíček do světa AI obsahuje
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Teplý oběd, svačiny a pití
+                </div>
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Licence k AI nástrojům
+                </div>
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Pojištění každého účastníka
+                </div>
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Všechny digitální výstupy
+                </div>
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Certifikát o absolvování
+                </div>
+                <div class="flex items-center text-sm text-indigo-200">
+                    <div class="w-2 h-2 bg-emerald-400 rounded-full mr-3 shrink-0"></div>
+                    Odborný pedagogický dozor
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+    
+   
+
+    <section id="faq" class="py-32 px-6 bg-slate-50 overflow-hidden relative">
+        <div class="blob w-96 h-96 bg-emerald-200 top-0 left-0 opacity-15"></div>
+        <div class="max-w-4xl mx-auto relative z-10">
+            <p class="text-center font-bold text-indigo-600 uppercase tracking-widest mb-3">Otázky a odpovědi</p>
+            <h2 class="text-5xl font-extrabold mb-20 text-center tracking-tight">Časté dotazy rodičů</h2>
+            <div class="space-y-5">
+                <details class="group bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:border-indigo-100 transition" data-aos="fade-up">
+                    <summary class="list-none font-bold text-lg flex justify-between items-center cursor-pointer text-indigo-950 group-open:text-indigo-600 transition">
+                        Musí mít dítě vlastní notebook?
+                        <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center group-open:bg-indigo-100 transition">
+                            <i data-lucide="chevron-down" class="group-open:rotate-180 transition w-5 h-5 text-slate-600 group-open:text-indigo-600"></i>
+                        </div>
+                    </summary>
+                    <div class="mt-6 text-slate-700 leading-relaxed border-t border-slate-100 pt-6 text-base font-medium">
+                        Ano, doporučujeme vlastní zařízení (alespoň průměrně výkonný notebook), na kterém se dítě učí pracovat a může v tvorbě pokračovat i doma. V případě nouze ale můžeme zapůjčit náš výkonný stroj (omezený počet).
+                    </div>
+                </details>
+                <details class="group bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:border-pink-100 transition" data-aos="fade-up" data-aos-delay="50">
+                    <summary class="list-none font-bold text-lg flex justify-between items-center cursor-pointer text-pink-950 group-open:text-pink-600 transition">
+                        Je tábor vhodný i pro úplné začátečníky?
+                        <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center group-open:bg-pink-100 transition">
+                            <i data-lucide="chevron-down" class="group-open:rotate-180 transition w-5 h-5 text-slate-600 group-open:text-pink-600"></i>
+                        </div>
+                    </summary>
+                    <div class="mt-6 text-slate-700 leading-relaxed border-t border-slate-100 pt-6 text-base font-medium">
+                        Absolutně. **AI pod kontrolou** učíme od úplných základů. Nejdůležitější je chuť tvořit a objevovat nové věci. Technické dovednosti děti získají pod vedením mentorů.
+                    </div>
+                </details>
+                <details class="group bg-white p-7 rounded-2xl border border-slate-100 shadow-sm hover:border-emerald-100 transition" data-aos="fade-up" data-aos-delay="100">
+                    <summary class="list-none font-bold text-lg flex justify-between items-center cursor-pointer text-emerald-950 group-open:text-emerald-600 transition">
+                        Budou vzniklá videa veřejně na YouTube/TikToku?
+                        <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center group-open:bg-emerald-100 transition">
+                            <i data-lucide="chevron-down" class="group-open:rotate-180 transition w-5 h-5 text-slate-600 group-open:text-emerald-600"></i>
+                        </div>
+                    </summary>
+                    <div class="mt-6 text-slate-700 leading-relaxed border-t border-slate-100 pt-6 text-base font-medium">
+                        Bezpečnost dětí je na prvním místě. Učíme tvorbu obsahu, ale žádná videa se nepublikují veřejně bez výslovného souhlasu rodičů. Děti si videa odnesou na vlastním disku pro soukromé použití nebo ukázku rodině.
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <footer id="kontakt" class="py-24 px-6 bg-white border-t-2 border-slate-100 text-center relative overflow-hidden">
+        <div class="blob w-64 h-64 bg-indigo-100 top-1/2 left-1/2 opacity-20"></div>
+        <div class="max-w-xl mx-auto relative z-10">
+            <h2 class="text-4xl font-extrabold mb-8 tracking-tight">Máš dotaz? Ozvi se!</h2>
+            <p class="text-xl text-slate-600 mb-12 font-medium">Rádi zodpovíme jakékoliv dotazy ohledně programu, techniky nebo registrace.</p>
+            <div class="flex flex-col sm:flex-row justify-center space-y-5 sm:space-y-0 sm:space-x-12 text-lg font-bold text-slate-950">
+                <a href="mailto:kudljan@gmail.com" class="flex items-center justify-center space-x-3 hover:text-indigo-600 transition group">
+                    <i data-lucide="mail" class="text-indigo-600 w-6 h-6"></i>
+                    <span>kudljan@gmail.com</span>
+                </a>
+                <a href="tel:+420123456789" class="flex items-center justify-center space-x-3 hover:text-indigo-600 transition group">
+                    <i data-lucide="phone" class="text-indigo-600 w-6 h-6"></i>
+                    <span>+420 605865152</span>
+                </a>
+            </div>
+            <div class="mt-20 pt-10 border-t border-slate-100 text-slate-500 text-xs uppercase tracking-widest font-semibold">
+                © 2026 AI pod kontrolou: Influencer Academy. Všechna práva vyhrazena.
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Inicializace Animací na Scroll
+        AOS.init({
+            duration: 600, // O něco rychlejší pro moderní feel
+            once: true,
+            offset: 60,
+            easing: 'ease-out-quad' // Jemnější dojezd
+        });
+
+        // Inicializace Ikon
+        lucide.createIcons();
+
+        // Hero Slideshow Logic (Pozadí)
+        let slideIndex = 0;
+        const slides = document.querySelectorAll(".slide");
+
+        function showSlides() {
+            slides.forEach(slide => slide.classList.remove("active"));
+            
+            slideIndex++;
+            if (slideIndex > slides.length) { slideIndex = 1 }
+            
+            slides[slideIndex - 1].classList.add("active");
+            setTimeout(showSlides, 5000); // Změna každých 5 sekund pro klidnější pozadí
+        }
+        
+        // Spustit slideshow po načtení DOM
+        document.addEventListener("DOMContentLoaded", showSlides);
+
+        // Particle stream from Přihláška button perimeter
+        const btnPrihlaska = document.getElementById('btn-prihlaska');
+        const particleColors = ['#10b981', '#34d399', '#6ee7b7', '#a7f3d0', '#059669', '#d1fae5'];
+
+        function spawnParticle() {
+            const rect = btnPrihlaska.getBoundingClientRect();
+            const p = document.createElement('span');
+            p.classList.add('particle');
+
+            // Spawn on the perimeter of the button
+            const side = Math.floor(Math.random() * 4);
+            let sx, sy;
+            if (side === 0) { sx = rect.left + Math.random() * rect.width; sy = rect.top; }
+            else if (side === 1) { sx = rect.right; sy = rect.top + Math.random() * rect.height; }
+            else if (side === 2) { sx = rect.left + Math.random() * rect.width; sy = rect.bottom; }
+            else { sx = rect.left; sy = rect.top + Math.random() * rect.height; }
+
+            // Fly outward from button center
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const angle = Math.atan2(sy - cy, sx - cx);
+            const dist = 20 + Math.random() * 35;
+            p.style.setProperty('--tx', Math.cos(angle) * dist + 'px');
+            p.style.setProperty('--ty', Math.sin(angle) * dist + 'px');
+            const dur = 0.6 + Math.random() * 0.6;
+            p.style.setProperty('--duration', dur + 's');
+            p.style.setProperty('--color', particleColors[Math.floor(Math.random() * particleColors.length)]);
+            p.style.left = sx + 'px';
+            p.style.top = sy + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), dur * 1000 + 100);
+        }
+
+        setInterval(spawnParticle, 100);
+    </script>
+</body>
+</html>
